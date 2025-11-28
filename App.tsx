@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { Journal } from './components/Journal';
 import { TheBrain } from './components/TheBrain';
 import { NavView } from './types';
+import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
   const [currentView, setCurrentView] = useState<NavView>('dashboard');
@@ -36,7 +37,18 @@ function App() {
       <Sidebar currentView={currentView} onChangeView={setCurrentView} />
       
       <main className="flex-1 ml-20 h-full overflow-hidden relative z-10">
-        {renderView()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView}
+            initial={{ opacity: 0, y: 10, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="h-full"
+          >
+            {renderView()}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );
