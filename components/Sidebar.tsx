@@ -35,14 +35,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView }) =
               onClick={() => onChangeView(item.id as NavView)}
               className={`group relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 ${
                 isActive 
-                  ? 'bg-white/10 text-white shadow-lg' 
+                  ? 'bg-white/10 text-white shadow-lg backdrop-blur-md' 
                   : 'text-zinc-500 hover:text-white hover:bg-white/5'
               }`}
             >
               <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
               
               {/* Tooltip-ish label on hover */}
-              <span className="absolute left-14 bg-[#1a1a1a] border border-white/10 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+              <span className="absolute left-14 bg-[#1a1a1a] border border-white/10 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
                 {item.label}
               </span>
 

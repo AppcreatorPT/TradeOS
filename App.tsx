@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Journal } from './components/Journal';
 import { TheBrain } from './components/TheBrain';
+import { Analytics } from './components/Analytics';
 import { NavView } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -17,12 +18,14 @@ function App() {
         return <Journal />;
       case 'brain':
         return <TheBrain />;
+      case 'analytics':
+        return <Analytics />;
       default:
-        // For Analytics/Settings, just show a placeholder for now
+        // For Settings, just show a placeholder for now
         return (
           <div className="flex flex-col items-center justify-center h-full text-zinc-500">
-            <h2 className="text-2xl font-light text-white mb-2">Coming Soon</h2>
-            <p>This module is under construction.</p>
+            <h2 className="text-2xl font-light text-white mb-2">Settings</h2>
+            <p>Preferences configuration coming soon.</p>
           </div>
         );
     }

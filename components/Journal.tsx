@@ -1,19 +1,36 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, UploadCloud, X } from 'lucide-react';
+import { Plus, Search, Filter, UploadCloud, X, Hash, Zap, Activity, AlertCircle } from 'lucide-react';
 import { MOCK_TRADES } from '../constants';
 import { AnimatePresence, motion } from 'framer-motion';
+
+const ASSETS = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'XAU/USD', 'EUR/USD', 'GBP/JPY', 'NVDA', 'TSLA'];
+const SETUPS = ['Breakout', 'Pullback', 'Reversal', 'Range Bound', 'Liquidity Sweep', 'Gap Fill'];
+const EMOTIONS = ['Disciplined', 'FOMO', 'Hesitant', 'Confident', 'Revenge', 'Boredom'];
+const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1D'];
 
 export const Journal: React.FC = () => {
   const [isEntryOpen, setIsEntryOpen] = useState(false);
   const [filter, setFilter] = useState('');
+  
+  // Form State
+  const [selectedAsset, setSelectedAsset] = useState(ASSETS[0]);
+  const [direction, setDirection] = useState<'LONG' | 'SHORT'>('LONG');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTimeframe, setSelectedTimeframe] = useState('15m');
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
 
   const listVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05
-      }
+      transition: { staggerChildren: 0.05 }
     }
   };
 
@@ -56,9 +73,8 @@ export const Journal: React.FC = () => {
         </button>
       </div>
 
-      {/* List - CSS Grid based for better control than table */}
+      {/* List */}
       <div className="flex-1 overflow-auto rounded-xl border border-white/5 bg-[#0c0c0c] custom-scrollbar">
-        {/* Header */}
         <div className="grid grid-cols-12 gap-4 border-b border-white/5 py-3 px-4 bg-zinc-900/30 sticky top-0 backdrop-blur-sm z-10 text-xs uppercase text-zinc-500 font-medium">
           <div className="col-span-2">Date</div>
           <div className="col-span-2">Pair</div>
@@ -69,13 +85,7 @@ export const Journal: React.FC = () => {
           <div className="col-span-2 text-right">Status</div>
         </div>
 
-        {/* Rows */}
-        <motion.div 
-          className="divide-y divide-white/5"
-          variants={listVariants}
-          initial="hidden"
-          animate="show"
-        >
+        <motion.div className="divide-y divide-white/5" variants={listVariants} initial="hidden" animate="show">
           {MOCK_TRADES.map((trade) => (
             <motion.div 
               key={trade.id} 
@@ -86,9 +96,7 @@ export const Journal: React.FC = () => {
               <div className="col-span-2 font-medium text-white">{trade.pair}</div>
               <div className="col-span-1">
                 <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                  trade.type === 'LONG' 
-                    ? 'border-emerald-500/30 text-emerald-500' 
-                    : 'border-rose-500/30 text-rose-500'
+                  trade.type === 'LONG' ? 'border-emerald-500/30 text-emerald-500' : 'border-rose-500/30 text-rose-500'
                 }`}>
                   {trade.type}
                 </span>
@@ -109,97 +117,194 @@ export const Journal: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* COMMAND PALETTE MODAL */}
+      {/* GAMIFIED ENTRY MODAL */}
       <AnimatePresence>
         {isEntryOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-             {/* Backdrop */}
              <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsEntryOpen(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/80 backdrop-blur-md"
              />
 
-             {/* Content */}
              <motion.div 
-                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 10 }}
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                className="relative w-full max-w-2xl bg-[#0F0F0F] rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden"
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="relative w-full max-w-3xl bg-[#0a0a0a] rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden"
              >
-                <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-[#141414]">
+                {/* Header */}
+                <div className="p-5 border-b border-zinc-800 flex justify-between items-center bg-[#111]">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></span>
-                    <span className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></span>
-                    <span className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></span>
-                    <span className="ml-2 text-zinc-500 text-xs font-mono">New Trade Entry</span>
+                     <div className="p-1.5 bg-zinc-800 rounded-md"><Zap size={14} className="text-[#00ff9d]" /></div>
+                     <span className="text-zinc-200 text-sm font-medium tracking-wide">Quick Log</span>
                   </div>
-                  <button onClick={() => setIsEntryOpen(false)} className="text-zinc-500 hover:text-white">
-                    <X size={16} />
+                  <button onClick={() => setIsEntryOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+                    <X size={18} />
                   </button>
                 </div>
                 
-                <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                  <div className="space-y-4">
+                <div className="p-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                  <div className="space-y-8">
+                    
+                    {/* 1. Asset Selection (Chips) */}
+                    <div>
+                      <label className="text-xs uppercase text-zinc-500 font-bold mb-3 block flex items-center gap-2">
+                        <Hash size={12} /> Asset
+                      </label>
+                      <div className="flex flex-wrap gap-3">
+                        {ASSETS.map((asset) => (
+                          <motion.button
+                            key={asset}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSelectedAsset(asset)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+                              selectedAsset === asset
+                                ? 'bg-[#00ff9d]/10 border-[#00ff9d] text-[#00ff9d] shadow-[0_0_10px_rgba(0,255,157,0.2)]'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:border-zinc-700'
+                            }`}
+                          >
+                            {asset}
+                          </motion.button>
+                        ))}
+                        <motion.button whileHover={{ scale: 1.05 }} className="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white">
+                          <Search size={16} />
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {/* 2. Direction Toggle (Segmented) */}
                     <div className="grid grid-cols-2 gap-4">
-                       <div className="group relative">
-                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Pair</label>
-                          <input type="text" placeholder="e.g. BTC/USDT" className="w-full bg-transparent border-b border-zinc-800 pb-2 text-lg text-white focus:border-[#00ff9d] focus:outline-none transition-colors" autoFocus />
+                       <motion.button
+                         whileTap={{ scale: 0.98 }}
+                         onClick={() => setDirection('LONG')}
+                         className={`relative h-16 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                           direction === 'LONG'
+                             ? 'bg-emerald-500/10 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                             : 'bg-zinc-900/50 border-zinc-800 opacity-50 hover:opacity-100'
+                         }`}
+                       >
+                         <span className={`text-lg font-bold tracking-widest ${direction === 'LONG' ? 'text-emerald-400' : 'text-zinc-500'}`}>LONG</span>
+                         {direction === 'LONG' && <div className="absolute inset-0 bg-emerald-500/5 blur-xl rounded-xl" />}
+                       </motion.button>
+
+                       <motion.button
+                         whileTap={{ scale: 0.98 }}
+                         onClick={() => setDirection('SHORT')}
+                         className={`relative h-16 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                           direction === 'SHORT'
+                             ? 'bg-rose-500/10 border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.2)]'
+                             : 'bg-zinc-900/50 border-zinc-800 opacity-50 hover:opacity-100'
+                         }`}
+                       >
+                         <span className={`text-lg font-bold tracking-widest ${direction === 'SHORT' ? 'text-rose-400' : 'text-zinc-500'}`}>SHORT</span>
+                         {direction === 'SHORT' && <div className="absolute inset-0 bg-rose-500/5 blur-xl rounded-xl" />}
+                       </motion.button>
+                    </div>
+
+                    {/* 3. Inputs Row */}
+                    <div className="grid grid-cols-3 gap-6">
+                       <div>
+                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-2 block">Entry Price</label>
+                          <input type="number" className="w-full bg-[#111] border border-zinc-800 rounded-lg p-3 text-lg font-mono text-white focus:border-[#00ff9d] focus:ring-1 focus:ring-[#00ff9d] outline-none transition-all placeholder:text-zinc-700" placeholder="0.00" />
                        </div>
-                       <div className="group relative">
-                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Direction</label>
-                          <select className="w-full bg-transparent border-b border-zinc-800 pb-2 text-lg text-white focus:border-[#00ff9d] focus:outline-none transition-colors appearance-none">
-                            <option className="bg-zinc-900">Long</option>
-                            <option className="bg-zinc-900">Short</option>
+                       <div>
+                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-2 block">Exit Price</label>
+                          <input type="number" className="w-full bg-[#111] border border-zinc-800 rounded-lg p-3 text-lg font-mono text-white focus:border-[#00ff9d] focus:ring-1 focus:ring-[#00ff9d] outline-none transition-all placeholder:text-zinc-700" placeholder="0.00" />
+                       </div>
+                       <div>
+                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-2 block">Timeframe</label>
+                          <select 
+                            className="w-full bg-[#111] border border-zinc-800 rounded-lg p-3 text-white focus:border-[#00ff9d] outline-none appearance-none"
+                            value={selectedTimeframe}
+                            onChange={(e) => setSelectedTimeframe(e.target.value)}
+                          >
+                            {TIMEFRAMES.map(tf => <option key={tf} value={tf}>{tf}</option>)}
                           </select>
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                       <div>
-                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Entry Price</label>
-                          <input type="number" className="w-full bg-transparent border-b border-zinc-800 pb-2 text-white focus:border-[#00ff9d] focus:outline-none transition-colors font-mono" />
-                       </div>
-                       <div>
-                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Exit Price</label>
-                          <input type="number" className="w-full bg-transparent border-b border-zinc-800 pb-2 text-white focus:border-[#00ff9d] focus:outline-none transition-colors font-mono" />
-                       </div>
-                       <div>
-                          <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Date</label>
-                          <input type="datetime-local" className="w-full bg-transparent border-b border-zinc-800 pb-2 text-white focus:border-[#00ff9d] focus:outline-none transition-colors text-sm" />
-                       </div>
+                    {/* 4. Context Tags */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] uppercase text-zinc-500 font-bold mb-2 flex items-center gap-1">
+                          <Activity size={12} /> Setup
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {SETUPS.map(tag => (
+                            <motion.button
+                              key={tag}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => toggleTag(tag)}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                                selectedTags.includes(tag)
+                                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                              }`}
+                            >
+                              {tag}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="text-[10px] uppercase text-zinc-500 font-bold mb-2 flex items-center gap-1">
+                          <AlertCircle size={12} /> Emotion
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {EMOTIONS.map(tag => (
+                            <motion.button
+                              key={tag}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => toggleTag(tag)}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                                selectedTags.includes(tag)
+                                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+                                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                              }`}
+                            >
+                              {tag}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Notes / Confluence</label>
-                      <textarea rows={3} placeholder="What was your rationale?" className="w-full bg-zinc-900/50 rounded-lg p-3 text-sm text-zinc-300 focus:ring-1 focus:ring-[#00ff9d] focus:outline-none border border-transparent resize-none"></textarea>
-                    </div>
-
-                    {/* Upload Dropzone */}
+                    {/* 5. Dropzone */}
                     <motion.div 
-                      whileHover={{ scale: 1.01, borderColor: "rgba(255, 255, 255, 0.2)" }}
-                      whileTap={{ scale: 0.99 }}
-                      className="border-2 border-dashed border-zinc-800 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group"
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.03)" }}
+                      className="border-2 border-dashed border-zinc-800 rounded-xl p-6 flex items-center justify-center gap-4 cursor-pointer group"
                     >
-                      <motion.div 
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="bg-zinc-900 p-3 rounded-full mb-3"
-                      >
-                        <UploadCloud size={20} className="text-zinc-400 group-hover:text-white" />
-                      </motion.div>
-                      <p className="text-sm text-zinc-400 font-medium">Drop TradingView screenshot</p>
-                      <p className="text-xs text-zinc-600 mt-1">AI will analyze chart patterns automatically</p>
+                       <div className="p-3 bg-zinc-900 rounded-full group-hover:scale-110 transition-transform">
+                          <UploadCloud size={20} className="text-zinc-400 group-hover:text-[#00ff9d] transition-colors" />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-sm text-zinc-300 font-medium">Drop screenshot</p>
+                          <p className="text-xs text-zinc-600">or click to browse</p>
+                       </div>
                     </motion.div>
+
                   </div>
                 </div>
                 
-                <div className="p-4 border-t border-zinc-800 bg-[#141414] flex justify-end gap-3">
-                  <button onClick={() => setIsEntryOpen(false)} className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors">Cancel</button>
-                  <button onClick={() => setIsEntryOpen(false)} className="px-6 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-zinc-200 transition-colors shadow-[0_0_10px_rgba(255,255,255,0.1)]">Log Trade</button>
+                {/* Footer Action */}
+                <div className="p-5 border-t border-zinc-800 bg-[#111]">
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setIsEntryOpen(false)}
+                    className="w-full py-4 bg-[#00ff9d] text-black rounded-xl font-bold text-lg tracking-wide hover:bg-[#00ff9d]/90 transition-colors shadow-[0_0_20px_rgba(0,255,157,0.3)] relative overflow-hidden"
+                  >
+                    LOG TRADE
+                    <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full hover:animate-[shine_1s_infinite]" />
+                  </motion.button>
                 </div>
              </motion.div>
           </div>
