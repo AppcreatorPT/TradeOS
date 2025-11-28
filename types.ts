@@ -9,7 +9,7 @@ export interface Trade {
   pnl: number;
   pnlPercent: number;
   date: string;
-  status: 'WIN' | 'LOSS' | 'BE'; // Break Even
+  status: 'WIN' | 'LOSS' | 'BE' | 'RUNNING';
   notes?: string;
   screenshotUrl?: string;
   aiAnalysis?: string;

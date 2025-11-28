@@ -4,10 +4,12 @@ import { Dashboard } from './components/Dashboard';
 import { Journal } from './components/Journal';
 import { TheBrain } from './components/TheBrain';
 import { Analytics } from './components/Analytics';
+import { Settings } from './components/Settings'; // New Component
 import { NavView } from './types';
 import { AnimatePresence, motion } from 'framer-motion';
+import { TradeProvider } from './context/TradeContext';
 
-function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState<NavView>('dashboard');
 
   const renderView = () => {
@@ -20,14 +22,10 @@ function App() {
         return <TheBrain />;
       case 'analytics':
         return <Analytics />;
+      case 'settings':
+        return <Settings />;
       default:
-        // For Settings, just show a placeholder for now
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-500">
-            <h2 className="text-2xl font-light text-white mb-2">Settings</h2>
-            <p>Preferences configuration coming soon.</p>
-          </div>
-        );
+        return <Dashboard onViewAll={() => setCurrentView('journal')} />;
     }
   };
 
@@ -54,6 +52,14 @@ function App() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <TradeProvider>
+      <AppContent />
+    </TradeProvider>
   );
 }
 

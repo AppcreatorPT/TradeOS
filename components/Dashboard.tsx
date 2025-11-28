@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip, XAxis, YAxis } from 'recharts';
 import { TrendingUp, ArrowRight, Activity, Zap } from 'lucide-react';
-import { EQUITY_DATA, MOCK_TRADES } from '../constants';
+import { useTradeContext } from '../context/TradeContext';
 import { motion, Variants } from 'framer-motion';
 
 // Utility for formatting currency
@@ -38,8 +38,33 @@ const hoverEffect = {
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
-  const winRate = 60; // Hardcoded mock
+  const { trades, accountBalance, getMetrics } = useTradeContext();
+  const { winRate, profitFactor, totalPnL } = getMetrics();
   
+  const currentEquity = accountBalance + totalPnL;
+  const growthPercent = ((currentEquity - accountBalance) / accountBalance) * 100;
+
+  // Generate Equity Curve Data
+  const equityData = useMemo(() => {
+    // Sort trades by date ascending
+    const sortedTrades = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    let runningBalance = accountBalance;
+    const dataPoints = [{ date: 'Start', equity: accountBalance }];
+    
+    sortedTrades.forEach(trade => {
+       // Only count closed trades for the curve
+       if (trade.status !== 'RUNNING' && trade.date) {
+         runningBalance += trade.pnl;
+         const shortDate = new Date(trade.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+         dataPoints.push({ date: shortDate, equity: runningBalance });
+       }
+    });
+    
+    // If we have too many points, maybe slice the last 20 for the chart
+    return dataPoints.length > 20 ? dataPoints.slice(dataPoints.length - 20) : dataPoints;
+  }, [trades, accountBalance]);
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 h-full overflow-y-auto custom-scrollbar">
       <header className="flex justify-between items-center mb-8">
@@ -51,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           <h1 className="text-3xl font-light text-white tracking-tight">
             Welcome back, <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500">Trader</span>
           </h1>
-          <p className="text-zinc-500 text-sm mt-1">Market conditions are optimal. 3 opportunities detected by AI.</p>
+          <p className="text-zinc-500 text-sm mt-1">Market conditions are optimal. System Ready.</p>
         </motion.div>
         
         <motion.div 
@@ -84,20 +109,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider flex items-center gap-2">
                 <Activity size={14} /> Total Equity
               </h2>
-              <div className="text-4xl font-bold text-white mt-2 font-mono">{formatCurrency(12100)}</div>
-              <div className="text-emerald-400 text-sm font-medium mt-1 flex items-center gap-1">
-                <TrendingUp size={14} /> +$2,100 (21%) <span className="text-zinc-600">this month</span>
+              <div className="text-4xl font-bold text-white mt-2 font-mono">{formatCurrency(currentEquity)}</div>
+              <div className={`text-sm font-medium mt-1 flex items-center gap-1 ${growthPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <TrendingUp size={14} className={growthPercent < 0 ? 'rotate-180' : ''} /> 
+                {growthPercent > 0 ? '+' : ''}{formatCurrency(totalPnL)} ({growthPercent.toFixed(2)}%) <span className="text-zinc-600">all time</span>
               </div>
             </div>
+            {/* Visual only select */}
             <select className="bg-black/30 border border-white/10 text-xs text-zinc-400 rounded-lg px-2 py-1 outline-none focus:border-zinc-600 hover:bg-black/50 transition-colors">
-              <option>Oct 2023</option>
-              <option>Sept 2023</option>
+              <option>Real-Time</option>
             </select>
           </div>
 
           <div className="absolute inset-0 bottom-0 top-20 right-0 left-0 opacity-80 group-hover:opacity-100 transition-opacity duration-500">
              <ResponsiveContainer width="100%" height="100%">
-               <AreaChart data={EQUITY_DATA}>
+               <AreaChart data={equityData}>
                  <defs>
                    <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">
                      <stop offset="5%" stopColor="#00ff9d" stopOpacity={0.15}/>
@@ -105,7 +131,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                    </linearGradient>
                  </defs>
                  <XAxis dataKey="date" hide />
-                 <YAxis hide domain={['dataMin - 1000', 'dataMax + 500']} />
+                 <YAxis hide domain={['auto', 'auto']} />
                  <Tooltip 
                    contentStyle={{ backgroundColor: 'rgba(5, 5, 5, 0.8)', border: '1px solid #333', borderRadius: '8px', backdropFilter: 'blur(4px)' }}
                    itemStyle={{ color: '#00ff9d' }}
@@ -159,14 +185,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
             <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Profit Factor</h2>
           </div>
           <div className="relative w-fit">
-            <span className="text-5xl font-bold text-white tracking-tighter">2.4</span>
+            <span className="text-5xl font-bold text-white tracking-tighter">{profitFactor}</span>
             <motion.div 
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1 }}
-              className="absolute -top-1 -right-16 text-[10px] text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold tracking-wider"
+              className={`absolute -top-1 -right-16 text-[10px] border px-1.5 py-0.5 rounded font-bold tracking-wider ${
+                profitFactor > 1.5 ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10'
+              }`}
             >
-              EXCELLENT
+              {profitFactor > 1.5 ? 'EXCELLENT' : 'NEUTRAL'}
             </motion.div>
           </div>
            <p className="text-xs text-zinc-500">Gross Profit / Gross Loss</p>
@@ -191,7 +219,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {MOCK_TRADES.slice(-3).reverse().map((trade) => (
+          {trades.slice(0, 3).map((trade) => (
              <motion.div 
                key={trade.id} 
                whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.08)" }}
@@ -205,31 +233,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                       </span>
                    </div>
                    <div className="text-right">
-                      <div className={`text-sm font-bold ${trade.pnl > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {trade.pnl > 0 ? '+' : ''}{formatCurrency(trade.pnl)}
-                      </div>
-                      <div className="text-xs text-zinc-500">{trade.pnlPercent}%</div>
+                      {trade.status !== 'RUNNING' && (
+                        <>
+                        <div className={`text-sm font-bold ${trade.pnl > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {trade.pnl > 0 ? '+' : ''}{formatCurrency(trade.pnl)}
+                        </div>
+                        <div className="text-xs text-zinc-500">{trade.pnlPercent}%</div>
+                        </>
+                      )}
+                      {trade.status === 'RUNNING' && (
+                        <span className="text-xs text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">RUNNING</span>
+                      )}
                    </div>
-                </div>
-                <div className="h-10 w-full mt-2 opacity-60">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[
-                        {v: trade.entryPrice}, 
-                        {v: trade.type === 'LONG' && trade.pnl > 0 ? trade.exitPrice : (trade.type === 'LONG' ? trade.exitPrice - 10 : trade.exitPrice + 10)},
-                        {v: trade.exitPrice}
-                      ]}>
-                        <Area 
-                          type="monotone" 
-                          dataKey="v" 
-                          stroke={trade.pnl > 0 ? '#10b981' : '#f43f5e'} 
-                          strokeWidth={2} 
-                          fill="transparent" 
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
                 </div>
              </motion.div>
           ))}
+          {trades.length === 0 && (
+             <div className="col-span-3 text-center py-8 text-zinc-500 text-sm">
+               No trades logged yet. Start your journey in the Journal.
+             </div>
+          )}
         </div>
       </motion.div>
     </div>
